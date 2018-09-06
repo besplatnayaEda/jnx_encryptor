@@ -256,7 +256,7 @@ int main(int argc, char **argv) {
   
   // поиск ключей
   
-  if (argc < 3 || argc > 10)
+  if (argc < 3 || argc > 15)
   {	fputs ("Invalid number of arguments\n",stderr);
 	puts ("-i  [filename.bin]	Input bin firmware file");
 	puts ("-ol [filename.ldr]	Output hex firmware file");
