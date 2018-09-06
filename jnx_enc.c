@@ -751,11 +751,15 @@ int main(int argc, char **argv) {
   FILE * pFile = fopen ( "TMP.hex" , "r+" );
   if (pFile==NULL) {fputs ("Temporary hex file open error",stderr); exit (1);}
   
+  FILE * output = NULL;
+  char current_symbol;
   
   // записываем .ldr
-  FILE * output = NULL;
+
   if(strcmp(outldr_fn, " "))		// если задано имя выходного файла
 	  output = fopen ( outldr_fn , "w+" );
+  else if(strcmp(outjnx_fn, " ") != 0)
+	  goto jnxfile;
   else
   {
 		char str[MAX_PATH];
@@ -782,7 +786,7 @@ int main(int argc, char **argv) {
   // формируем выходной hex файл
   fprintf(output,"$hexfile\n");
   
-   char current_symbol;
+   
    
   while (!feof(pFile)) {
 	  current_symbol = fgetc(pFile);
@@ -793,7 +797,7 @@ int main(int argc, char **argv) {
   
   fclose (output);
   
-
+jnxfile:
   
   // записываем .jnx
   fseek (pFile , 0 , SEEK_SET);
