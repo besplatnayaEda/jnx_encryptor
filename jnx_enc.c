@@ -871,7 +871,7 @@ jnxfile:
 			sprintf(str,"%sImageMerge.exe -a %s -b tmp1.bin -o %s",NPath,inpldr_fn,outbin_fn);
 		else
 		{
-			if(strcmp(outldr_fn, " "))	// если указан выходной hex файл
+			if(strcmp(outjnx_fn, " "))	// если указан выходной hex файл
 			{
 				sprintf(outstr,"%s",outjnx_fn);
 				for(int i = 0; i < (4*MAX_PATH-3); i++)
@@ -888,7 +888,7 @@ jnxfile:
 					}
 				}
 			}
-			else if(strcmp(outjnx_fn, " "))	// если указан выходной hex jnx файл
+			else if(strcmp(outldr_fn, " ") && strcmp(outjnx_fn, " "))	// если указан выходной hex jnx файл
 			{
 				sprintf(outstr,"%s",outldr_fn);
 				for(int i = 0; i < (4*MAX_PATH-3); i++)
