@@ -15,7 +15,7 @@
 #define SIZE 64
 
 #define SYSVERSION	(1)
-#define SUBVERSION	(3)
+#define SUBVERSION	(4)
 
 unsigned long crc32( unsigned long crc, const void *buf, int size );
 
@@ -222,7 +222,8 @@ int main(int argc, char **argv) {
   FILE * tmpbin1 = NULL;
   
   char inpbin_fn[MAX_PATH] = " ";		// входной бинарник прошивки
-  char outhex_fn[MAX_PATH] = " ";		// выходной hex с прошивкой 
+  char outldr_fn[MAX_PATH] = " ";		// выходной hex.ldr с прошивкой 
+  char outjnx_fn[MAX_PATH] = " ";		// выходной hex.jnx с прошивкой 
   char inpldr_fn[MAX_PATH] = " ";		// входной бинарник с загрузчиком
   char outbin_fn[MAX_PATH] = " ";		// выходной бинарник с загрузчиком и прошивкой
   
@@ -257,12 +258,13 @@ int main(int argc, char **argv) {
   
   if (argc < 3 || argc > 10)
   {	fputs ("Invalid number of arguments\n",stderr);
-	puts ("-i [filename.bin]	Input bin firmware file");
-	puts ("-o [filename.ldr]	Output hex firmware file");
-	puts ("-t <hex number>		Firmware type");
-	puts ("-l [filename.bin]	Input loader bin firmware file");
-	puts ("-b [filename.bin]	Output bin firmware and loader file");
-	puts ("-a <app id>			Application identifier");
+	puts ("-i  [filename.bin]	Input bin firmware file");
+	puts ("-ol [filename.ldr]	Output hex firmware file");
+	puts ("-oj [filename.jnx]	Output hex firmware file");
+	puts ("-t  <hex number>		Firmware type");
+	puts ("-l  [filename.bin]	Input loader bin firmware file");
+	puts ("-b  [filename.bin]	Output bin firmware and loader file");
+	puts ("-a  <app id>			Application identifier");
 	exit (1);
   }
   
@@ -297,7 +299,7 @@ int main(int argc, char **argv) {
 
 			for(int j = MAX_PATH-1; j >=0; j--)
 			{
-				if(NPath[j] == 0x2F)
+				if(NPath[j] == 0x2F)	// '/'
 					break;
 				NPath[j] = 0x00;
 			}
@@ -324,22 +326,41 @@ int main(int argc, char **argv) {
 			printf("Input binary file       : [%s]\n",inpbin_fn);
 	  }
 	  
-	  if(strcmp(argv[i], "-o") == 0)		// выходной hex файл с прошивкой
+	  if(strcmp(argv[i], "-ol") == 0)		// выходной hex файл с прошивкой
 	  {
-			strcpy(outhex_fn,argv[i+1]);
+			strcpy(outldr_fn,argv[i+1]);
 			
 			char ch[] = ".ldr";
 			char *istr ;
-			istr = strcasestr(outhex_fn, ch);
+			istr = strcasestr(outldr_fn, ch);
 			if( istr == NULL){fputs ("Output firmware ihex file error",stderr); exit (1);}
 			
 			for(int j = 0; j < MAX_PATH; j++)	// замена символов
 			{
-				if(outhex_fn[j] == 0x5C)	// '\'
-					outhex_fn[j] = 0x2F;	// '/'
+				if(outldr_fn[j] == 0x5C)	// '\'
+					outldr_fn[j] = 0x2F;	// '/'
 			}
 			
-			printf("Output firmware ihex    : [%s]\n",outhex_fn);
+			printf("Output firmware ihex.ldr: [%s]\n",outldr_fn);
+			
+	  }
+	  
+	  if(strcmp(argv[i], "-oj") == 0)		// выходной hex файл с прошивкой
+	  {
+			strcpy(outjnx_fn,argv[i+1]);
+			
+			char ch[] = ".jnx";
+			char *istr ;
+			istr = strcasestr(outjnx_fn, ch);
+			if( istr == NULL){fputs ("Output firmware ihex file error",stderr); exit (1);}
+			
+			for(int j = 0; j < MAX_PATH; j++)	// замена символов
+			{
+				if(outjnx_fn[j] == 0x5C)	// '\'
+					outjnx_fn[j] = 0x2F;	// '/'
+			}
+			
+			printf("Output firmware ihex.jnx: [%s]\n",outjnx_fn);
 			
 	  }
 	  
@@ -730,9 +751,11 @@ int main(int argc, char **argv) {
   FILE * pFile = fopen ( "TMP.hex" , "r+" );
   if (pFile==NULL) {fputs ("Temporary hex file open error",stderr); exit (1);}
   
+  
+  // записываем .ldr
   FILE * output = NULL;
-  if(strcmp(outhex_fn, " "))		// если задано имя выходного файла
-	  output = fopen ( outhex_fn , "w+" );
+  if(strcmp(outldr_fn, " "))		// если задано имя выходного файла
+	  output = fopen ( outldr_fn , "w+" );
   else
   {
 		char str[MAX_PATH];
@@ -742,12 +765,12 @@ int main(int argc, char **argv) {
 			if(str[i] == 0x5C)	// '\'
 				str[i] = 0x2F;	// '/'
 					//	  '.'				   'b'			         'i'					 'n'
-			if((str[i] == 0x2E) && (str[i+1] == 0x62) && (str[i+2] == 0x69) && (str[i+3] == 0x6E))
+			if((str[i] == '.') && (str[i+1] == 'b') && (str[i+2] == 'i') && (str[i+3] == 'n'))
 			{
-				str[i] 	= 0x2E;
-				str[i+1] = 0x6C;		// 'l' 0x6C		'b' 0x62	
-				str[i+2] = 0x64;		// 'd' 0x64		'i' 0x69		
-				str[i+3] = 0x72;		// 'r' 0x72		'n' 0x6E		
+				str[i] 	 = '.';
+				str[i+1] = 'l';		// 'l' 0x6C		'b' 0x62	
+				str[i+2] = 'd';		// 'd' 0x64		'i' 0x69		
+				str[i+3] = 'r';		// 'r' 0x72		'n' 0x6E		
 			}
 		}
 		output = fopen ( str , "w+" );
@@ -760,6 +783,50 @@ int main(int argc, char **argv) {
   fprintf(output,"$hexfile\n");
   
    char current_symbol;
+   
+  while (!feof(pFile)) {
+	  current_symbol = fgetc(pFile);
+        if (current_symbol == EOF)
+            break;
+  fprintf(output, "%c", current_symbol);
+  }
+  
+  fclose (output);
+  
+
+  
+  // записываем .jnx
+  fseek (pFile , 0 , SEEK_SET);
+
+  if(strcmp(outjnx_fn, " "))		// если задано имя выходного файла
+	  output = fopen ( outjnx_fn , "w+" );
+  else
+  {
+		char str[MAX_PATH];
+		sprintf(str,"%s", inpbin_fn);
+		for(int i = 0; i < (MAX_PATH-3); i++)
+		{
+			if(str[i] == 0x5C)	// '\'
+				str[i] = 0x2F;	// '/'
+					//	  '.'				   'b'			         'i'					 'n'
+			if((str[i] == '.') && (str[i+1] == 'b') && (str[i+2] == 'i') && (str[i+3] == 'n'))
+			{
+				str[i] 	 = '.';//0x2E;
+				str[i+1] = 'j';		// 'j' 0x6A		'b' 0x62	
+				str[i+2] = 'n';		// 'n' 0x6E		'i' 0x69		
+				str[i+3] = 'x';		// 'x' 0x78		'n' 0x6E		
+			}
+		}
+		output = fopen ( str , "w+" );
+  }
+  
+  if (output==NULL) {fputs ("Output hex file error",stderr); exit (1);}
+  
+  
+  // формируем выходной hex файл
+  fprintf(output,"$jnxfile\n");
+  
+
    
   while (!feof(pFile)) {
 	  current_symbol = fgetc(pFile);
@@ -800,20 +867,37 @@ int main(int argc, char **argv) {
 			sprintf(str,"%sImageMerge.exe -a %s -b tmp1.bin -o %s",NPath,inpldr_fn,outbin_fn);
 		else
 		{
-			if(strcmp(outhex_fn, " "))	// если указан выходной hex файл
+			if(strcmp(outldr_fn, " "))	// если указан выходной hex файл
 			{
-				sprintf(outstr,"%s",outhex_fn);
+				sprintf(outstr,"%s",outjnx_fn);
+				for(int i = 0; i < (4*MAX_PATH-3); i++)
+				{
+					if(outstr[i] == 0x5C)	// '\'
+						outstr[i] = 0x2F;	// '/'
+						//	  '.'					   'j'						'n'						 'x'
+					if((outstr[i] == '.') && (outstr[i+1] == 'j') && (outstr[i+2] == 'n') && (outstr[i+3] == 'x'))
+					{
+						outstr[i] 	= '.';
+						outstr[i+1] = 'b';		// 'b'
+						outstr[i+2] = 'i';		// 'i'
+						outstr[i+3] = 'n';		// 'n'
+					}
+				}
+			}
+			else if(strcmp(outjnx_fn, " "))	// если указан выходной hex jnx файл
+			{
+				sprintf(outstr,"%s",outldr_fn);
 				for(int i = 0; i < (4*MAX_PATH-3); i++)
 				{
 					if(outstr[i] == 0x5C)	// '\'
 						outstr[i] = 0x2F;	// '/'
 						//	  '.'					   'l'						'd'						 'r'
-					if((outstr[i] == 0x2E) && (outstr[i+1] == 0x6C) && (outstr[i+2] == 0x64) && (outstr[i+3] == 0x72))
+					if((outstr[i] == '.') && (outstr[i+1] == 'l') && (outstr[i+2] == 'd') && (outstr[i+3] == 'r'))
 					{
-						outstr[i] 	= 0x2E;
-						outstr[i+1] = 0x62;		// 'b'
-						outstr[i+2] = 0x69;		// 'i'
-						outstr[i+3] = 0x6E;		// 'n'
+						outstr[i] 	= '.';
+						outstr[i+1] = 'b';		// 'b'
+						outstr[i+2] = 'i';		// 'i'
+						outstr[i+3] = 'n';		// 'n'
 					}
 				}
 			}

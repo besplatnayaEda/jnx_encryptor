@@ -1,0 +1,7 @@
+jnx_enc.exe
+*.o
+*.bin
+*.hex
+*.ldr
+*.jnx
+
