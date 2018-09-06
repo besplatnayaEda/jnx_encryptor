@@ -888,7 +888,7 @@ jnxfile:
 					}
 				}
 			}
-			else if(strcmp(outldr_fn, " ") && strcmp(outjnx_fn, " "))	// если указан выходной hex jnx файл
+			/*else if(strcmp(outldr_fn, " ") && strcmp(outjnx_fn, " "))	// если указан выходной hex jnx файл
 			{
 				sprintf(outstr,"%s",outldr_fn);
 				for(int i = 0; i < (4*MAX_PATH-3); i++)
@@ -904,7 +904,7 @@ jnxfile:
 						outstr[i+3] = 'n';		// 'n'
 					}
 				}
-			}
+			}*/
 			else
 			{
 				char ldrstr[MAX_PATH] = "";
