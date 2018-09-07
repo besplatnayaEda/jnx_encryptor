@@ -637,6 +637,8 @@ int main(int argc, char **argv) {
 	 printf("Generating ihex.%s... ","jnx");
  else if(chk_key(KEY_ol))
 	 printf("Generating ihex.%s...","ldr");
+ else 
+	 printf("Generating ihex.%s and ihex.%s...","jnx","ldr");
 
  
   system(str_srec);
