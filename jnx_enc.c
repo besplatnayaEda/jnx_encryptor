@@ -15,7 +15,7 @@
 #define SIZE 64
 
 #define SYSVERSION	(1)
-#define SUBVERSION	(5)
+#define SUBVERSION	(6)
 
 unsigned long crc32( unsigned long crc, const void *buf, int size );
 
@@ -30,16 +30,17 @@ void f_MyEnd (void);
 unsigned long key_word;
 
 #define set_key(x)	  key_word |= (x) 
-#define chk_key(x)	( key_word &  x )	
+#define chk_key(x)	( key_word &  (x) )	
 #define clr_key(x)	  key_word &= (~(x)) 
 
-#define KEY_i		( 1 << (0) )
-#define KEY_ol		( 1 << (1) )
-#define KEY_oj		( 1 << (2) )
-#define KEY_t		( 1 << (3) )
-#define KEY_l		( 1 << (4) )
-#define KEY_b		( 1 << (5) )
-#define KEY_a		( 1 << (6) )
+#define KEY_i		( (1 << (0)) )
+#define KEY_ol		( (1 << (1)) )
+#define KEY_oj		( (1 << (2)) )
+#define KEY_t		( (1 << (3)) )
+#define KEY_l		( (1 << (4)) )
+#define KEY_b		( (1 << (5)) )
+#define KEY_a		( (1 << (6)) )
+#define KEY_dbg		( (1 << (7)) )
 /*
  *
  */
@@ -104,8 +105,15 @@ char *strcasestr(const char *str, const char *pattern) {
 void f_MyEnd (void)
 {   
    //Вывод сообщения о завершении работы
-   puts ("\nPress AnyKey to Exit");
-   _getch();
+   if(chk_key(KEY_dbg))
+	   puts ("\nDone");
+   else
+	   puts ("\nPress AnyKey to Exit");
+   
+   fflush( stdout );
+   
+   if(chk_key(KEY_dbg) == 0)
+	 _getch();
 }
 
 /*
@@ -257,7 +265,7 @@ int main(int argc, char **argv) {
   
   puts("\niHex generator and encryptor");
   printf("v%u.%u, %s, %s by K.Artemev\n\n",SYSVERSION,SUBVERSION,__DATE__, __TIME__);
-  
+  fflush( stdout );
 
    //Проверка регистрации функции MyEnd_s
    if (atexit (f_MyEnd) != 0)  
@@ -268,7 +276,7 @@ int main(int argc, char **argv) {
   
   // поиск ключей
   
-  if (argc < 3 || argc > 15)
+  if (argc < 3 || argc > 16)
   {	fputs ("Invalid number of arguments\n",stderr);
 	puts ("-i  [filename.bin]	Input bin firmware file");
 	puts ("-ol [filename.ldr]	Output hex firmware file");
@@ -277,6 +285,7 @@ int main(int argc, char **argv) {
 	puts ("-l  [filename.bin]	Input loader bin firmware file");
 	puts ("-b  [filename.bin]	Output bin firmware and loader file");
 	puts ("-a  <app id>			Application identifier");
+	puts ("-dbg					Debug mode");
 	exit (1);
   }
   
@@ -336,6 +345,7 @@ int main(int argc, char **argv) {
 			}
 			
 			printf("Input binary file       : [%s]\n",inpbin_fn);
+			fflush( stdout );
 			set_key(KEY_i);
 	  }
 	  
@@ -355,6 +365,7 @@ int main(int argc, char **argv) {
 			}
 			
 			printf("Output firmware ihex.ldr: [%s]\n",outldr_fn);
+			fflush( stdout );
 			clr_key(KEY_oj);
 			set_key(KEY_ol);
 	  }
@@ -375,6 +386,7 @@ int main(int argc, char **argv) {
 			}
 			
 			printf("Output firmware ihex.jnx: [%s]\n",outjnx_fn);
+			fflush( stdout );
 			clr_key(KEY_ol);
 			set_key(KEY_oj);
 	  }
@@ -386,6 +398,7 @@ int main(int argc, char **argv) {
 			if( type > 0xFF){fputs ("Firmware type error",stderr);set_key(KEY_t); exit (1);}
 			
 			printf("Firmvare type           : (0x%Xh)\n",type);
+			fflush( stdout );
 			set_key(KEY_t);
 	  }
 	  
@@ -405,6 +418,7 @@ int main(int argc, char **argv) {
 			}
 			
 			printf("Input loader binary file: [%s]\n",inpldr_fn);
+			fflush( stdout );
 			set_key(KEY_l);
 	  }
 	  
@@ -424,21 +438,74 @@ int main(int argc, char **argv) {
 			}
 			
 			printf("Output merge binary file: [%s]\n",outbin_fn);
+			fflush( stdout );
 			set_key(KEY_b);
 	  }
 	  
 	  if(strcmp(argv[i], "-a") == 0)		// ID прошивки
 	  {
 			AppID = (int)argv[i+1];
-			printf("Firmvare AppID		    : (%d)\n",AppID);
+			printf("Firmvare AppID          : (%d)\n",AppID);
+			fflush( stdout );
 			set_key(KEY_a);
 	  }
 	  
+	  if(strcmp(argv[i], "-dbg") == 0)		// ID прошивки
+	  {
+			printf("Debug mode              : on\n");
+			fflush( stdout );
+			set_key(KEY_dbg);
+	  }
 	    
   }
   
    putchar ('\n');
+  fflush( stdout );
   
+  
+	WIN32_FIND_DATA FindFileData;
+    HANDLE hf;
+	char srec_name[MAX_PATH];
+	char imerg_name[MAX_PATH];
+
+
+	
+if(chk_key(KEY_oj | KEY_ol))
+{
+	sprintf(srec_name,"%ssrec_cat.exe",NPath);
+	
+    hf = FindFirstFile(srec_name,&FindFileData);
+    if(hf != INVALID_HANDLE_VALUE)
+		goto e1;
+	else
+	{
+		hf = FindFirstFile("srec_cat.exe",&FindFileData);
+		if(hf != INVALID_HANDLE_VALUE)
+			sprintf(srec_name,"srec_cat.exe");
+		else
+		{fputs ("srec_cat.exe does not exist",stderr); exit (1);}
+	}
+e1:;
+	FindClose(hf);
+}
+
+	sprintf(imerg_name,"%sImageMerge.exe",NPath);
+if(chk_key(KEY_l))
+{	
+    hf = FindFirstFile(imerg_name,&FindFileData);
+    if(hf != INVALID_HANDLE_VALUE)
+		goto e2;
+	else
+	{
+		hf = FindFirstFile("ImageMerge.exe",&FindFileData);
+		if(hf != INVALID_HANDLE_VALUE)
+			sprintf(imerg_name,"ImageMerge.exe");
+		else
+		{fputs ("ImageMerge.exe does not exist",stderr); exit (1);}
+	}
+e2:;
+	FindClose(hf);
+}
   // расчет смещения будет по определению заголовка
 
 
@@ -477,6 +544,7 @@ int main(int argc, char **argv) {
   rewind (inpbin);
 
   printf("Size input bin file  = %8X\n",lSize);
+  fflush( stdout );
   
   fseek (inpbin , off , SEEK_SET);
   // allocate memory to contain the whole file:
@@ -516,6 +584,7 @@ int main(int argc, char **argv) {
 	tmp[23] = crc;
 	
    printf("CRC32 input bin file = %8X\n",crc);
+   fflush( stdout );
    
    unsigned long XlSize = lSize;
    
@@ -545,10 +614,11 @@ int main(int argc, char **argv) {
    unsigned char *ptmp = &tmp[0];
 
    ///
-	unsigned char crcidx[8];
-	unsigned char crcrnd[8];
+if(chk_key(KEY_oj | KEY_ol) ==0)
+	 goto make_head;
 	
 	printf("Encrypting... ");
+	fflush( stdout );
    // мешаем первую строку
    for(gptx = 0; gptx < SIZE; gptx++)
    {
@@ -567,29 +637,7 @@ int main(int argc, char **argv) {
 	 //  printf("%2X[%d]  %2X{%d} \n",crypt[gptx],gptx,ptmp[gptx],tmpr);
    }
 
-   //(crcrnd[i] != crcidx[i]) && !(((crcrnd[i] >= 16) && (crcrnd[i] <= 23)) || ((crcidx[i] >= 16) && (crcidx[i] <= 23)))
- /*  for(int i = 0; i < sizeof(crcrnd); i++)
-   {
-	   //printf("[%d]  {%d} \n",crcrnd[i],crcidx[i]);
-	   
-	   if(((crcrnd[i] >= 16) && (crcrnd[i] <= 23)) ^ ((crcidx[i] >= 16) && (crcidx[i] <= 23)))
-	   {
-			if( (crcrnd[i] >= 16) && (crcrnd[i] <= 23) )
-			{
-				//crypt[crcrnd[i]] = ptmp[crcrnd[i]];
-				crypt[crcidx[i]] = ptmp[crcidx[i]] ^ crcidx[i];
-			}
-			else if ( (crcidx[i] >= 16) && (crcidx[i] <= 23) )
-			{
-				//crypt[crcidx[i]] = ptmp[crcidx[i]];
-				crypt[crcrnd[i]] = ptmp[crcrnd[i]] ^ crcrnd[i];
-			}
-	   }
-	   else if(!(((crcrnd[i] >= 16) && (crcrnd[i] <= 23)) && ((crcidx[i] >= 16) && (crcidx[i] <= 23))))
-		   crypt[crcrnd[i]] = ptmp[crcidx[i]] ^ crcidx[i];
-		
-   }
-   */
+  
   
    ptmp +=SIZE;
    
@@ -612,11 +660,18 @@ int main(int argc, char **argv) {
 	}
    
 	printf("done!\n");
+	fflush( stdout );
 	
   
   // записываем зашифрованный бинарник в 
 	fwrite(&crypt, 1, lSize, tmpbin);
 	fclose (tmpbin);
+	char str_srec[3*MAX_PATH];
+  
+  // формируем hex файл
+  sprintf(str_srec,"%s  ./tmp.bin -Binary -crop 0x00000000 0xFFFFFFFF -offset 0x00080000 -o ./TMP.hex -Intel -Output_Block_Size=64",srec_name);
+
+make_head:;
 	
 	char a[] = {0x07,0x03,0x00,0x08};
 	fwrite(&a, 1, 4, tmpbin1);
@@ -625,21 +680,18 @@ int main(int argc, char **argv) {
 
   fclose (inpbin);
   fclose (tmpbin1);
-  char str_srec[3*MAX_PATH];
   
-  // формируем hex файл
-  sprintf(str_srec,"%ssrec_cat.exe  ./tmp.bin -Binary -crop 0x00000000 0xFFFFFFFF -offset 0x00080000 -o ./TMP.hex -Intel -Output_Block_Size=64",NPath);
-//  sprintf(str_srec,"%ssrec_cat.exe  ./crpt.bin -Binary -crop 0x00000000 0xFFFFFFFF -offset 0x00080000 -o ./TMP.hex -Intel -Output_Block_Size=64",NPath);
- // system(str_srec);
- // sprintf(str_srec,"%ssrec_cat.exe  ./tmp.bin -Binary -crop 0x00000000 0xFFFFFFFF -offset 0x00080000 -o ./TMP1.hex -Intel -Output_Block_Size=64",NPath);
+  
+
 
  if(chk_key(KEY_oj))
 	 printf("Generating ihex.%s... ","jnx");
  else if(chk_key(KEY_ol))
 	 printf("Generating ihex.%s...","ldr");
- else 
-	 printf("Generating ihex.%s and ihex.%s...","jnx","ldr");
+ else
+	 goto merge;
 
+ fflush( stdout );
  
   system(str_srec);
   
@@ -678,8 +730,16 @@ int main(int argc, char **argv) {
   if (output==NULL) {fputs ("Output hex file error",stderr); exit (1);}
   
   
+  //-------------------------------
+//
+//-------------------------------
+
+  
   // формируем выходной hex файл
-  fprintf(output,"$hexfile\n");
+  fprintf(output,"//------------------------------------------------------------------------------\n"
+				 "//\n"
+				 "//------------------------------------------------------------------------------\n"
+				 "$hexfile\n");
   
    
    
@@ -692,7 +752,7 @@ int main(int argc, char **argv) {
   
   fclose (output);
   
-jnxfile:
+jnxfile:;
   
   // записываем .jnx
   fseek (pFile , 0 , SEEK_SET);
@@ -723,7 +783,10 @@ jnxfile:
   
   
   // формируем выходной hex файл
-  fprintf(output,"$jnxfile\n");
+  fprintf(output,"//------------------------------------------------------------------------------\n"
+				 "//\n"
+				 "//------------------------------------------------------------------------------\n"
+				 "$jnxfile\n");
   
 
    
@@ -739,9 +802,10 @@ jnxfile:
   fclose (pFile);
   
  printf("done!\n");
-
+ fflush( stdout );
   
-  
+merge:;
+ 
   // склеиваем загрузчик и прошивку
   if(chk_key(KEY_l))
 	{
@@ -855,8 +919,10 @@ jnxfile:
 				
 				
 			}
-			sprintf(str,"%sImageMerge.exe -a %s -b tmp1.bin -o %s",NPath,inpldr_fn,outstr);
+			sprintf(str,"%s -a %s -b tmp1.bin -o %s",imerg_name,inpldr_fn,outstr);
 		}
+			
+			
 			
 
 		
@@ -864,6 +930,7 @@ jnxfile:
 		printf("Merge firmware... \n");
 		system(str);
 		printf("done!\n");
+		fflush( stdout );
 	}
   
   remove("TMP.hex");
