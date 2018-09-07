@@ -15,7 +15,7 @@
 #define SIZE 64
 
 #define SYSVERSION	(1)
-#define SUBVERSION	(4)
+#define SUBVERSION	(5)
 
 unsigned long crc32( unsigned long crc, const void *buf, int size );
 
@@ -27,7 +27,19 @@ long str2hex(const char *s);
 
 void f_MyEnd (void);
 
+unsigned long key_word;
 
+#define set_key(x)	( key_word |= x )
+#define chk_key(x)	( key_word &  x )
+#define clr_key(x)	( key_word &= (~x) )
+
+#define KEY_i		( 1 << (0) )
+#define KEY_ol		( 1 << (1) )
+#define KEY_oj		( 1 << (2) )
+#define KEY_t		( 1 << (3) )
+#define KEY_l		( 1 << (4) )
+#define KEY_b		( 1 << (5) )
+#define KEY_a		( 1 << (6) )
 /*
  *
  */
@@ -272,7 +284,7 @@ int main(int argc, char **argv) {
   for(int i = 0; i < argc; i++)
   {
 	  if(strcmp(argv[i], "-i") == 0)
-		  break;
+		  set_key(KEY_i);
 	  
 	  if( i == argc)
 	  {
@@ -312,10 +324,10 @@ int main(int argc, char **argv) {
 			char ch[] = ".bin";
 			char *istr ;
 			istr = strcasestr(inpbin_fn, ch);
-			if( istr == NULL){fputs ("Input firmware binary file error",stderr); exit (1);}
+			if( istr == NULL){fputs ("Input firmware binary file error",stderr); clr_key(KEY_i); exit (1);}
 				
 			inpbin = fopen ( inpbin_fn , "rb+" );
-			if (inpbin==NULL) {fputs ("Input binary file error",stderr); exit (1);}
+			if (inpbin==NULL) {fputs ("Input binary file error",stderr); clr_key(KEY_i); exit (1);}
 			
 			for(int j = 0; j < MAX_PATH; j++)	// замена символов
 			{
@@ -324,6 +336,7 @@ int main(int argc, char **argv) {
 			}
 			
 			printf("Input binary file       : [%s]\n",inpbin_fn);
+			set_key(KEY_i);
 	  }
 	  
 	  if(strcmp(argv[i], "-ol") == 0)		// выходной hex файл с прошивкой
@@ -333,7 +346,7 @@ int main(int argc, char **argv) {
 			char ch[] = ".ldr";
 			char *istr ;
 			istr = strcasestr(outldr_fn, ch);
-			if( istr == NULL){fputs ("Output firmware ihex file error",stderr); exit (1);}
+			if( istr == NULL){fputs ("Output firmware ihex file error",stderr);clr_key(KEY_ol); exit (1);}
 			
 			for(int j = 0; j < MAX_PATH; j++)	// замена символов
 			{
@@ -342,7 +355,7 @@ int main(int argc, char **argv) {
 			}
 			
 			printf("Output firmware ihex.ldr: [%s]\n",outldr_fn);
-			
+			set_key(KEY_ol);
 	  }
 	  
 	  if(strcmp(argv[i], "-oj") == 0)		// выходной hex файл с прошивкой
@@ -352,7 +365,7 @@ int main(int argc, char **argv) {
 			char ch[] = ".jnx";
 			char *istr ;
 			istr = strcasestr(outjnx_fn, ch);
-			if( istr == NULL){fputs ("Output firmware ihex file error",stderr); exit (1);}
+			if( istr == NULL){fputs ("Output firmware ihex file error",stderr);clr_key(KEY_oj); exit (1);}
 			
 			for(int j = 0; j < MAX_PATH; j++)	// замена символов
 			{
@@ -361,16 +374,17 @@ int main(int argc, char **argv) {
 			}
 			
 			printf("Output firmware ihex.jnx: [%s]\n",outjnx_fn);
-			
+			set_key(KEY_oj);
 	  }
 	  
 	  if(strcmp(argv[i], "-t") == 0)		// тип прошивки
 	  {
 			type = str2hex(argv[i+1]);
 			
-			if( type > 0xFF){fputs ("Firmware type error",stderr); exit (1);}
+			if( type > 0xFF){fputs ("Firmware type error",stderr);set_key(KEY_t); exit (1);}
 			
 			printf("Firmvare type           : (0x%Xh)\n",type);
+			set_key(KEY_t);
 	  }
 	  
 	  if(strcmp(argv[i], "-l") == 0)		// бинарник загрузчика
@@ -380,7 +394,7 @@ int main(int argc, char **argv) {
 			char ch[] = ".bin";
 			char *istr ;
 			istr = strcasestr(inpldr_fn, ch);
-			if( istr == NULL){fputs ("Input loader binary file type error",stderr); exit (1);}
+			if( istr == NULL){fputs ("Input loader binary file type error",stderr);clr_key(KEY_l); exit (1);}
 			
 			for(int j = 0; j < MAX_PATH; j++)	// замена символов
 			{
@@ -389,6 +403,7 @@ int main(int argc, char **argv) {
 			}
 			
 			printf("Input loader binary file: [%s]\n",inpldr_fn);
+			set_key(KEY_l);
 	  }
 	  
 	  if(strcmp(argv[i], "-b") == 0)		// бинарник загрузчика и прошивки
@@ -398,7 +413,7 @@ int main(int argc, char **argv) {
 			char ch[] = ".bin";
 			char *istr ;
 			istr = strcasestr(outbin_fn, ch);
-			if( istr == NULL){fputs ("Output merge loader and firmware binary file error",stderr); exit (1);}
+			if( istr == NULL){fputs ("Output merge loader and firmware binary file error",stderr);clr_key(KEY_b); exit (1);}
 			
 			for(int j = 0; j < MAX_PATH; j++)	// замена символов
 			{
@@ -407,12 +422,14 @@ int main(int argc, char **argv) {
 			}
 			
 			printf("Output merge binary file: [%s]\n",outbin_fn);
+			set_key(KEY_b);
 	  }
 	  
 	  if(strcmp(argv[i], "-a") == 0)		// ID прошивки
 	  {
 			AppID = (int)argv[i+1];
 			printf("Firmvare AppID		    : (%d)\n",AppID);
+			set_key(KEY_a);
 	  }
 	  
 	    
@@ -497,6 +514,14 @@ int main(int argc, char **argv) {
 	tmp[23] = crc;
 	
    printf("CRC32 input bin file = %8X\n",crc);
+   
+   unsigned long XlSize;
+   
+   XlSize ^= crc;
+	tmp[16] = XlSize >> 24;
+	tmp[17] = XlSize >> 16;
+	tmp[18] = XlSize >> 8;
+	tmp[19] = XlSize;
  
  // шифрование
  
@@ -585,148 +610,7 @@ int main(int argc, char **argv) {
 	}
    
 
-	// потом убрать
-	unsigned char encrypt[lSize];
-	seed = crc;
-	///
-
-	unsigned char eperm[SIZE];
-	int cnt = 0;
-	int i = 0;
-	///
-	for(i = 0; i < (SIZE); i++)
-	{
-		unsigned char rndidx = getRand(SIZE);
 	
-	
-
-	if(((i >= 16) && (i <= 23)) || ((rndidx >= 16) && (rndidx <= 23)) )
-	{
-		if( (i >= 16) && (i <= 23) )
-			crcidx[i-16] = rndidx;
-		
-		if( (rndidx >= 16) && (rndidx <= 23) )
-			crcrnd[rndidx-16] = i;
-		
-		if( (i >= 16) && (i <= 23) )
-			encrypt[i] = crypt[i];
-/*		switch(i){
-			case 20:
-				crcidx[0] = rndidx;
-				break;
-			case 21:
-				crcidx[1] = rndidx;
-				break;
-			case 22:
-				crcidx[2] = rndidx;
-				break;
-			case 23:
-				crcidx[3] = rndidx;
-				break;
-		}*/
-/*		switch(rndidx){
-			case 20:
-				crcrnd[0] = i;
-				break;
-			case 21:
-				crcrnd[1] = i;
-				break;
-			case 22:
-				crcrnd[2] = i;
-				break;
-			case 23:
-				crcrnd[3] = i;
-				break;
-		}*/
-//		if((i >= 20) && (i <= 23))
-//			encrypt[i] = crypt[i];
-	}
-		else
-		{
-			if(rndidx / (SIZE/2))
-				encrypt[rndidx+(i / SIZE)] = ~crypt[i];
-			else
-				encrypt[rndidx+(i / SIZE)] = crypt[i];
-		}
-		
-		
-	}
-	//if(i == SIZE)
-		{
-			for(int j = 0; j < 4; j++)
-				encrypt[crcidx[j]] = crypt[crcrnd[j]];
-		}
-	
-//	for(int i = 0; i<32;i++)
-//		printf("%2X",encrypt[i]);
-	
-	/*for(; i < (lSize - tail); i++)
-	{
-		unsigned char rndidx = getRand(SIZE);
-
-		{
-			
-			if(rndidx / (SIZE/2))
-				encrypt[rndidx+(i / SIZE)*SIZE] = ~crypt[i];
-			else
-				encrypt[rndidx+(i / SIZE)*SIZE] = crypt[i];
-		}
-	}
-
-	for(; i < lSize; i++)
-	{
-		unsigned char rndidx = getRand(tail);
-
-		{
-			printf("%d \n",(i / SIZE)*SIZE);
-			if(rndidx / (tail/2))
-				encrypt[rndidx+(i / SIZE)*SIZE] = ~crypt[i];
-			else
-				encrypt[rndidx+(i / SIZE)*SIZE] = crypt[i];
-		}
-	}
-	*/
-//	FILE *encrpt = fopen ( "./encrpt.bin" , "wb+" );		//пишем з
-//	fwrite(&encrypt, 1, lSize, encrpt);
-//	fclose (encrpt);
-	
-	//for(int i = 0; i < 4; i++)
-	//	printf("%d --%2X[%d] - %2X[%d] \n",i,encrypt[crcidx[i]],crcidx[i],crypt[crcrnd[i]],crcrnd[i]);
-	
-   
-	//GetCurrentDirectoryA(MAX_PATH, NPath);
-/*	sprintf(NPath,"%s",argv[0]);
-//printf("%s %d\n",NPath,MAX_PATH);
-	for(int i = 0; i < MAX_PATH; i++)
-		{
-			if(NPath[i] == 0x5C)	// '\'
-				NPath[i] = 0x2F;	// '/'
-				//printf("%2X\n",NPath[i]);
-						//	  'c'					   'r'						'c'						 'r'
-			if((NPath[i] == 0x63) && (NPath[i+1] == 0x72) && (NPath[i+2] == 0x63) && (NPath[i+3] == 0x00))
-			{
-				
-				//NPath[i] 	= 0x00;
-				//NPath[i+1] = 0x00;		// 'b'
-				//NPath[i+2] = 0x00;		// 'i'
-				///NPath[i+3] = 0x00;		// 'n'
-				//break;
-			}
-		}
-//printf("%s %d\n",NPath,MAX_PATH);
-	for(int i = MAX_PATH-1; i >=0; i--)
-	{
-		if(NPath[i] == 0x2F)
-		{
-			//for(int j = i + 1; j < MAX_PATH; j++)
-				
-			break;
-		}
-		NPath[i] = 0x00;
-	}
-//printf("%s %d\n",NPath,MAX_PATH);
-   */
-  /* the whole file is now loaded in the memory buffer. */
   
   // записываем зашифрованный бинарник в 
 	fwrite(&crypt, 1, lSize, tmpbin);
@@ -756,9 +640,9 @@ int main(int argc, char **argv) {
   
   // записываем .ldr
 
-  if(strcmp(outldr_fn, " "))		// если задано имя выходного файла
+  if(chk_key(KEY_ol))		// если задано имя выходного файла
 	  output = fopen ( outldr_fn , "w+" );
-  else if(strcmp(outjnx_fn, " ") != 0)
+  else if(chk_key(KEY_oj))
 	  goto jnxfile;
   else
   {
@@ -802,7 +686,7 @@ jnxfile:
   // записываем .jnx
   fseek (pFile , 0 , SEEK_SET);
 
-  if(strcmp(outjnx_fn, " "))		// если задано имя выходного файла
+  if(chk_key(KEY_oj))		// если задано имя выходного файла
 	  output = fopen ( outjnx_fn , "w+" );
   else
   {
@@ -848,7 +732,7 @@ jnxfile:
   
   
   // склеиваем загрузчик и прошивку
-  if(strcmp(inpldr_fn, " "))
+  if(chk_key(KEY_l))
 	{
 		/// добавить проверку загрузчика
 		FILE * loader = fopen ( inpldr_fn , "r" );
@@ -867,11 +751,11 @@ jnxfile:
 		
 		char str[4*MAX_PATH];
 		char outstr[4*MAX_PATH];
-		if(strcmp(outbin_fn, " "))		// если указан путь выходного файла
+		if(chk_key(KEY_b))		// если указан путь выходного файла
 			sprintf(str,"%sImageMerge.exe -a %s -b tmp1.bin -o %s",NPath,inpldr_fn,outbin_fn);
 		else
 		{
-			if(strcmp(outjnx_fn, " "))	// если указан выходной hex файл
+			if(chk_key(KEY_oj))	// если указан выходной hex файл
 			{
 				sprintf(outstr,"%s",outjnx_fn);
 				for(int i = 0; i < (4*MAX_PATH-3); i++)
@@ -888,7 +772,7 @@ jnxfile:
 					}
 				}
 			}
-			/*else if(strcmp(outldr_fn, " ") && strcmp(outjnx_fn, " "))	// если указан выходной hex jnx файл
+			else if(chk_key(KEY_ol))	// если указан выходной hex jnx файл
 			{
 				sprintf(outstr,"%s",outldr_fn);
 				for(int i = 0; i < (4*MAX_PATH-3); i++)
@@ -904,7 +788,7 @@ jnxfile:
 						outstr[i+3] = 'n';		// 'n'
 					}
 				}
-			}*/
+			}
 			else
 			{
 				char ldrstr[MAX_PATH] = "";
@@ -958,12 +842,13 @@ jnxfile:
 				
 				sprintf(outstr,"%s%s_%s.bin",NPath,ldrname,binname);
 				
-				
+				sprintf(str,"%sImageMerge.exe -a %s -b tmp1.bin -o %s",NPath,inpldr_fn,outstr);
 			}
 		}
 			
-//printf("\n [%s] \n", outstr);
-		sprintf(str,"%sImageMerge.exe -a %s -b tmp1.bin -o %s",NPath,inpldr_fn,outstr);
+
+		
+		printf("\n [%s] \n", str);
 		system(str);
 	}
   
