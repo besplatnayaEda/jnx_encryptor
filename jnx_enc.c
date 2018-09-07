@@ -517,7 +517,7 @@ int main(int argc, char **argv) {
 	
    printf("CRC32 input bin file = %8X\n",crc);
    
-   unsigned long XlSize;
+   unsigned long XlSize = lSize;
    
    XlSize ^= crc;
 	tmp[16] = XlSize >> 24;
