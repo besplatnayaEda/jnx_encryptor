@@ -29,9 +29,9 @@ void f_MyEnd (void);
 
 unsigned long key_word;
 
-#define set_key(x)	( key_word |= x )
-#define chk_key(x)	( key_word &  x )
-#define clr_key(x)	( key_word &= (~x) )
+#define set_key(x)	  key_word |= (x) 
+#define chk_key(x)	( key_word &  x )	
+#define clr_key(x)	  key_word &= (~(x)) 
 
 #define KEY_i		( 1 << (0) )
 #define KEY_ol		( 1 << (1) )
@@ -355,6 +355,7 @@ int main(int argc, char **argv) {
 			}
 			
 			printf("Output firmware ihex.ldr: [%s]\n",outldr_fn);
+			clr_key(KEY_oj);
 			set_key(KEY_ol);
 	  }
 	  
@@ -374,6 +375,7 @@ int main(int argc, char **argv) {
 			}
 			
 			printf("Output firmware ihex.jnx: [%s]\n",outjnx_fn);
+			clr_key(KEY_ol);
 			set_key(KEY_oj);
 	  }
 	  
@@ -546,7 +548,7 @@ int main(int argc, char **argv) {
 	unsigned char crcidx[8];
 	unsigned char crcrnd[8];
 	
-	
+	printf("Encrypting... ");
    // мешаем первую строку
    for(gptx = 0; gptx < SIZE; gptx++)
    {
@@ -609,7 +611,7 @@ int main(int argc, char **argv) {
 		crypt[gptx] = ptmp[tmpr] ^ tmpr;
 	}
    
-
+	printf("done!\n");
 	
   
   // записываем зашифрованный бинарник в 
@@ -630,6 +632,13 @@ int main(int argc, char **argv) {
 //  sprintf(str_srec,"%ssrec_cat.exe  ./crpt.bin -Binary -crop 0x00000000 0xFFFFFFFF -offset 0x00080000 -o ./TMP.hex -Intel -Output_Block_Size=64",NPath);
  // system(str_srec);
  // sprintf(str_srec,"%ssrec_cat.exe  ./tmp.bin -Binary -crop 0x00000000 0xFFFFFFFF -offset 0x00080000 -o ./TMP1.hex -Intel -Output_Block_Size=64",NPath);
+
+ if(chk_key(KEY_oj))
+	 printf("Generating ihex.%s... ","jnx");
+ else if(chk_key(KEY_ol))
+	 printf("Generating ihex.%s...","ldr");
+
+ 
   system(str_srec);
   
   FILE * pFile = fopen ( "TMP.hex" , "r+" );
@@ -727,7 +736,7 @@ jnxfile:
   
   fclose (pFile);
   
-  
+ printf("done!\n");
 
   
   
@@ -842,14 +851,17 @@ jnxfile:
 				
 				sprintf(outstr,"%s%s_%s.bin",NPath,ldrname,binname);
 				
-				sprintf(str,"%sImageMerge.exe -a %s -b tmp1.bin -o %s",NPath,inpldr_fn,outstr);
+				
 			}
+			sprintf(str,"%sImageMerge.exe -a %s -b tmp1.bin -o %s",NPath,inpldr_fn,outstr);
 		}
 			
 
 		
-		printf("\n [%s] \n", str);
+		//printf("\n [%s] \n", str);
+		printf("Merge firmware... \n");
 		system(str);
+		printf("done!\n");
 	}
   
   remove("TMP.hex");
