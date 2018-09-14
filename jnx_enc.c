@@ -673,6 +673,12 @@ if(chk_key(KEY_oj | KEY_ol) ==0)
 
 make_head:;
 	
+	// запись размера прошивки	
+	tmp[16] = lSize >> 24;
+	tmp[17] = lSize >> 16;
+	tmp[18] = lSize >> 8;
+	tmp[19] = lSize;
+	
 	char a[] = {0x07,0x03,0x00,0x08};
 	fwrite(&a, 1, 4, tmpbin1);
 	fseek (tmpbin1 , off , SEEK_SET);
