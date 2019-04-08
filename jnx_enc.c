@@ -833,7 +833,7 @@ merge:;
 		char str[4*MAX_PATH];
 		char outstr[4*MAX_PATH];
 		if(chk_key(KEY_b))		// если указан путь выходного файла
-			sprintf(str,"%sImageMerge.exe -a %s -b tmp1.bin -o %s",NPath,inpldr_fn,outbin_fn);
+			sprintf(str,"%sImageMerge.exe -a %s -b tmp1.bin -o %s > NULL",NPath,inpldr_fn,outbin_fn);
 		else
 		{
 			if(chk_key(KEY_oj))	// если указан выходной hex файл
@@ -925,7 +925,7 @@ merge:;
 				
 				
 			}
-			sprintf(str,"%s -a %s -b tmp1.bin -o %s",imerg_name,inpldr_fn,outstr);
+			sprintf(str,"%s -a %s -b tmp1.bin -o %s > NULL",imerg_name,inpldr_fn,outstr);
 		}
 			
 			
@@ -933,10 +933,22 @@ merge:;
 
 		
 		//printf("\n [%s] \n", str);
-		printf("Merge firmware... \n");
-		system(str);
-		printf("done!\n");
+		printf("Merge firmware... ");
 		fflush( stdout );
+		
+		int result = system(str);
+		if(result == 0)
+		{
+			printf("done!\n");
+			fflush( stdout );
+		}
+		else
+		{
+			printf("\nError %x\n", result);
+		}
+		
+		
+		
 	}
   
   remove("TMP.hex");
